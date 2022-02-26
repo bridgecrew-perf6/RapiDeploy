@@ -1,3 +1,0 @@
-RewriteEngine on
-RewriteCond %{HTTP_HOST} ^(.*)\.domain\.com
-RewriteRule ^(.*)$ subdomains/%1/$1 [L,NC,QSA]
