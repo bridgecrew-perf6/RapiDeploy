@@ -3,8 +3,8 @@
 if (isset($_GET["delete"])) {
 	deleteService($_GET["delete"]);
 }
-if (isset($_GET["create"]) && $isset($_GET["service"])) {
-	createService($_GET["service"], $_GET["create"])	
+if (isset($_GET["create"]) && isset($_GET["service"])) {
+	createService($_GET["service"], $_GET["create"]);
 }
 
 function deleteService($serviceName) {
