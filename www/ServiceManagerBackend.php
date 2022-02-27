@@ -1,15 +1,12 @@
 <?php
-$serviceToCreate = "DemoApp";
-$newServiceName = "newUsersService";
 
-//deleteService($newServiceName);
-//try {
-	if (createService($serviceToCreate, $newServiceName)) {
-		echo "createdSite";
-	}
-//} catch (Exception $ex) {
-//	echo $ex->getMessage();
-//}
+if (isset($_GET["delete"])) {
+	deleteService($_GET["delete"]);
+}
+if (isset($_GET["create"]) && $isset($_GET["service"])) {
+	createService($_GET["service"], $_GET["create"])	
+}
+
 function deleteService($serviceName) {
 	$serviceName = strtolower(sanitize($serviceName));
 	deleteServiceFiles("../clientServices/".$serviceName);
