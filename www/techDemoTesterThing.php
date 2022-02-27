@@ -1,12 +1,53 @@
 <?php
 $serviceToCreate = "DemoApp";
 $newServiceName = "newUsersService";
-try {
+
+//deleteService($newServiceName);
+//try {
 	if (createService($serviceToCreate, $newServiceName)) {
 		echo "createdSite";
 	}
-} catch (Exception $ex) {
-	echo $ex->getMessage();
+//} catch (Exception $ex) {
+//	echo $ex->getMessage();
+//}
+function deleteService($serviceName) {
+	$serviceName = strtolower(sanitize($serviceName));
+	deleteServiceFiles("../clientServices/".$serviceName);
+	deleteServiceDB($serviceName);
+}
+function deleteServiceFiles($src) {
+	$dir = opendir($src);
+    while( $file = readdir($dir) ) {
+		if (( $file != '.' ) && ( $file != '..' )) {
+            if ( is_dir($src . '/' . $file) && !is_link($src . '/' . $file) ) {
+				deleteServiceFiles($src . '/' . $file);
+            } else {
+                unlink($src . '/' . $file);
+            }
+        }
+    }
+	closedir($dir);
+	rmdir($src);
+	return true;
+}
+function deleteServiceDB($serviceName) {
+	$servername = "localhost";
+	$username = "root";
+	$password = "";
+	$conn = new mysqli($servername, $username, $password);
+	if ($conn->connect_error) {
+		throw new Exception("Error: SQL Connection failed: ".$conn->connect_error, 100);
+	}
+	$dbToRemove = "CSD_".$serviceName;
+	$usernameToRemove = "CSU_".$serviceName;
+	$sql = "DROP USER IF EXISTS '".$usernameToRemove."'@'".$servername."';";
+	$sql .= "DROP DATABASE IF EXISTS `".$dbToRemove."`;";
+	if ($conn->multi_query($sql) === TRUE) {
+	} else {
+		throw new Exception("Error: Error deleting database: " . $conn->error, 100);
+	}
+	$conn->close();
+	return true;
 }
 
 function createService($service, $name) {
