@@ -1,7 +1,6 @@
 <?php
 $serviceToCreate = "DemoApp";
 $newServiceName = "newUsersService";
-polyfill();
 try {
 	if (createService($serviceToCreate, $newServiceName)) {
 		echo "createdSite";
@@ -11,24 +10,45 @@ try {
 }
 
 function createService($service, $name) {
+	polyfill();
 	$name = strtolower(sanitize($name));
 	if (!file_exists("../clientServices/".$name)) {
 		$conf = getDeployConf($service);
-		if (copyDir("../serviceTemplates/".$service, "../clientServices/".$name) && createDB($name, $conf)) {
+		if (copyDir("../serviceTemplates/".$service, "../clientServices/".$name) && createDB($name, $conf) && writeVariables($name, $service, $conf)) {
+			finalRedirect($name, $conf);
 			return true;
 		}
 	} else {
 		throw new Exception("Error: Service Already Exists With Name: ".$name, 100);
 	}
 }
-
+function finalRedirect($name, $conf) {
+	$domain = "cloud";
+	if (isset($conf["Redirect"])) {
+		header("Location: http://".$name.".".$domain."/".$conf["Redirect"]);
+	} else {
+		header("Location: http://".$name.".".$domain);
+	}
+}
 function sanitize($str) {
 	return str_replace(Array("\\","/","'","\"","$"), "", $str);
 }
 function getDeployConf($service) {
 	return parse_ini_file("../serviceTemplates/".$service."/rapideploy.ini");
 }
-
+function writeVariables($name, $service, $conf) {
+	if (isset($conf["WriteVariables"])) {
+		foreach ($conf["WriteVariables"] as $file) {
+			$file = "../clientServices/".$name."/".$file;
+			if (is_file ($file) && (!is_dir($file))) {
+				$data = file_get_contents($file);
+				$data = str_ireplace(Array("%rapideploy-servicename%","%rapideploy-clientservicename%","%rapideploy-version%","%rapideploy-serviceversion%"), Array($service, $name,"v1.0.0",((isset($conf["ServiceVersion"]))? $conf["ServiceVersion"]:"0.0.0")), $data);
+				file_put_contents($file,$data);
+			}
+		}
+	}
+	return true;
+}
 function createDB($name, $conf) {
 	if (isset($conf) && $conf["CreateDataBase"]) {
 		$servername = "localhost";
@@ -48,6 +68,7 @@ function createDB($name, $conf) {
 		$sql .= "GRANT ALL PRIVILEGES ON `".$newdbname."`.* TO '".$newusername."'@'".$servername."'";
 		if ($conn->multi_query($sql) === TRUE) {
 			writeDBLogin($servername,$newdbname,$newusername,$newpassword,$name,$conf);
+			executeSQL($servername,$newdbname,$newusername,$newpassword,$conf);
 		} else {
 			throw new Exception("Error: Error creating database: " . $conn->error, 100);
 		}
@@ -57,22 +78,45 @@ function createDB($name, $conf) {
 		return true;
 	}
 }
-
 function writeDBLogin($server, $db, $user, $pass, $name, $conf) {
-	$datatemplate = "<?php \$db_server = \"".$server."\"; \$db_user = \"".$user."\"; \$db_password = \"".$pass."\"; \$db_db = \"".$db."\";?>";
-	foreach ($conf["DataBaseLogin"] as $file) {
-		$file = "../clientServices/".$name."/".$file;
-		$data = $datatemplate;
-		if (is_file ($file) && (!is_dir($file))) {
-			if ((filesize($file) == 0) || (trim(file_get_contents($file)) == false) || (trim(file_get_contents($file)) == "")){
-				file_put_contents($file,$data);
-			} else {
-				$data = file_get_contents($file);
-				$data = str_ireplace(Array("%rapideploy-dbserver%","%rapideploy-db%","%rapideploy-dbuser%","%rapideploy-dbpass%"), Array($server, $db, $user, $pass), $data);
+	$datatemplate = "
+	<?php
+		\$db_server = \"".$server."\";
+		\$db_user = \"".$user."\";
+		\$db_password = \"".$pass."\";
+		\$db_db = \"".$db."\";
+	?>";
+	if (isset($conf["DataBaseLogin"])) {
+		foreach ($conf["DataBaseLogin"] as $file) {
+			$file = "../clientServices/".$name."/".$file;
+			$data = $datatemplate;
+			if (is_file ($file) && (!is_dir($file))) {
+				if ((filesize($file) == 0) || (trim(file_get_contents($file)) == false) || (trim(file_get_contents($file)) == "")){
+					file_put_contents($file,$data);
+				} else {
+					$data = file_get_contents($file);
+					$data = str_ireplace(Array("%rapideploy-dbserver%","%rapideploy-db%","%rapideploy-dbuser%","%rapideploy-dbpass%"), Array($server, $db, $user, $pass), $data);
+					file_put_contents($file,$data);
+				}
+			} elseif (!is_dir($file)) {
 				file_put_contents($file,$data);
 			}
-		} elseif (!is_dir($file)) {
-			file_put_contents($file,$data);
+		}
+	}
+}
+function executeSQL($server, $db, $user, $pass, $conf) {
+	if (isset($conf["SQLFile"])) {
+		foreach ($conf["SQLFile"] as $file) {
+			$conn2 = new mysqli($server, $user, $pass, $db);
+			if ($conn2->connect_error) {
+				throw new Exception("Error: SQL Connection failed: ".$conn2->connect_error, 100);
+			}
+			if ($conn2->multi_query(file_get_contents($file)) === TRUE) {
+				
+			} else {
+				throw new Exception("Error: Error creating database: " . $conn->error, 100);
+			}
+			$conn2->close();
 		}
 	}
 }

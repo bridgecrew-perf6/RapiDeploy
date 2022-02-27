@@ -1,4 +1,4 @@
 <?php
-	echo "Successfully deployed the demo app to ".$_SERVER['SERVER_NAME'];
+	echo "Successfully deployed %rapideploy-servicename% %rapideploy-serviceversion% %rapideploy-clientservicename% to ".$_SERVER['SERVER_NAME']." using rapideploy %rapideploy-version%";
 ?>
-"%rapideploy-dbserver%","%rapideploy-db%","%rapideploy-dbuser%","%rapideploy-dbpass%"
+<br>"%rapideploy-dbserver%","%rapideploy-db%","%rapideploy-dbuser%","%rapideploy-dbpass%"

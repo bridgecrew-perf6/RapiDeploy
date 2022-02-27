@@ -1,4 +1,4 @@
 <?php
-	echo "Successfully deployed the demo app to ".$_SERVER['SERVER_NAME'];
+	echo "Successfully deployed DemoApp 1.0.0 newusersservice to ".$_SERVER['SERVER_NAME']." using rapideploy v1.0.0";
 ?>
-"localhost","CSD_newusersservice","CSU_newusersservice","G>2bg(l-VYa_VFQWOyau6Bj+I5g~<gx^91lJV04uxtm(AZZ4m(Uh8<_zvFPs#@Zz"
+<br>"localhost","CSD_newusersservice","CSU_newusersservice","oan^aa,(v9ejdZuPOK*skjD:Wc_?TM&)!N>V6rJ<mDvnJ<mvu4M,7>l!&>y3uXp:"
